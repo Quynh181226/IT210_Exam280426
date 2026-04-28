@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sách - Thư viện</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Quản lý Sách</h1>
+        </div>
+        <a href="/books/new" class="btn btn-primary">Thêm sách mới</a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <form class="row g-2 mb-4" method="get" action="/books">
+        <div class="col-md-8">
+            <input type="text" class="form-control" name="keyword" placeholder="Tìm kiếm theo tiêu đề hoặc tác giả..." th:value="${keyword}">
+            <input type="hidden" name="sortField" th:value="${sortField}">
+            <input type="hidden" name="sortDir" th:value="${sortDir}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+        </div>
+        <div class="col-md-2">
+            <a href="/books" class="btn btn-secondary w-100">Xóa tìm kiếm</a>
+        </div>
+    </form>
+
+    <div th:if="${#lists.isEmpty(books)}" class="alert alert-info text-center py-5">
+        <h5 class="mb-0">Chưa có sách nào trong thư viện</h5>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(books)}" class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 5%">STT</th>
+                <th style="width: 25%">
+                    <a th:href="@{/books(page=${currentPage}, keyword=${keyword}, sortField='title', sortDir=${reverseSortDir})}" class="text-dark text-decoration-none">
+                        Tiêu đề
+                        <span th:if="${sortField == 'title'}">
+                                <span th:if="${sortDir == 'asc'}">↑</span>
+                                <span th:unless="${sortDir == 'asc'}">↓</span>
+                            </span>
+                    </a>
+                </th>
+                <th style="width: 15%">Tác giả</th>
+                <th style="width: 15%">ISBN</th>
+                <th style="width: 10%">
+                    <a th:href="@{/books(page=${currentPage}, keyword=${keyword}, sortField='publicationYear', sortDir=${reverseSortDir})}" class="text-dark text-decoration-none">
+                        Năm XB
+                        <span th:if="${sortField == 'publicationYear'}">
+                                <span th:if="${sortDir == 'asc'}">↑</span>
+                                <span th:unless="${sortDir == 'asc'}">↓</span>
+                            </span>
+                    </a>
+                </th>
+                <th style="width: 15%">
+                    <a th:href="@{/books(page=${currentPage}, keyword=${keyword}, sortField='price', sortDir=${reverseSortDir})}" class="text-dark text-decoration-none">
+                        Giá
+                        <span th:if="${sortField == 'price'}">
+                                <span th:if="${sortDir == 'asc'}">↑</span>
+                                <span th:unless="${sortDir == 'asc'}">↓</span>
+                            </span>
+                    </a>
+                </th>
+                <th style="width: 15%">Thao tác</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="book, iterStat : ${books}">
+                <td class="text-center" th:text="${currentPage * 5 + iterStat.index + 1}">1</td>
+                <td th:text="${book.title}">Tiêu đề</td>
+                <td th:text="${book.author}">Tác giả</td>
+                <td th:text="${book.isbn}">ISBN</td>
+                <td class="text-center" th:text="${book.publicationYear}">2024</td>
+                <td class="text-end fw-bold text-warning" th:text="${book.price} + ' VND'">Giá</td>
+                <td>
+                    <a class="btn btn-sm btn-success" th:href="'/books/edit/' + ${book.id} + '?page=' + ${currentPage} + '&keyword=' + (${keyword} != null ? ${keyword} : '') + '&sortField=' + ${sortField} + '&sortDir=' + ${sortDir}">Sửa</a>
+                    <button class="btn btn-sm btn-danger" th:data-id="${book.id}" th:data-page="${currentPage}" th:data-keyword="${keyword}" th:data-sortfield="${sortField}" th:data-sortdir="${sortDir}" onclick="confirmDelete(this)">Xóa</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:if="${totalPages > 0}" class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                    <a class="page-link" th:href="@{/books(page=${currentPage - 1}, keyword=${keyword}, sortField=${sortField}, sortDir=${sortDir})}">Previous</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Trang <span th:text="${currentPage + 1}">1</span> / <span th:text="${totalPages}">1</span></span>
+                </li>
+                <li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? 'disabled' : ''">
+                    <a class="page-link" th:href="@{/books(page=${currentPage + 1}, keyword=${keyword}, sortField=${sortField}, sortDir=${sortDir})}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function confirmDelete(btn) {
+        if(confirm('Bạn có chắc chắn muốn xóa sách này không?')) {
+            window.location.href = '/books/delete/' + btn.getAttribute('data-id') + '?page=' + btn.getAttribute('data-page') + '&keyword=' + (btn.getAttribute('data-keyword') || '') + '&sortField=' + btn.getAttribute('data-sortfield') + '&sortDir=' + btn.getAttribute('data-sortdir');
+        }
+    }
+</script>
+</body>
+</html>
